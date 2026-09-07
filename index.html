@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDEAE2">
+<title>Ledger — Task Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#EDEAE2;
+    --paper-raised:#F6F4EE;
+    --ink:#232320;
+    --ink-soft:#6B6A63;
+    --line:#D9D5C9;
+    --accent:#2C4A7C;
+    --accent-soft:#DCE3ED;
+    --rust:#B5542D;
+    --rust-soft:#F3E1D8;
+    --sage:#5C7A5A;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--paper); color:var(--ink);}
+  body{
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:96px;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+
+  header{
+    padding:22px 18px 14px;
+    position:sticky; top:0; z-index:5;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  header h1{
+    margin:0 0 2px;
+    font-size:22px; font-weight:700; letter-spacing:-0.01em;
+  }
+  header .sub{
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  header .sub .count{color:var(--accent); font-weight:600;}
+
+  .toolbar{
+    display:flex; gap:8px; padding:10px 18px 0;
+  }
+  .toolbar button{
+    font-family:inherit; font-size:12px; font-weight:500;
+    background:none; border:1px solid var(--line); color:var(--ink-soft);
+    padding:6px 10px; border-radius:3px; cursor:pointer;
+  }
+  .toolbar button:active{background:var(--paper-raised);}
+
+  main{padding:14px 14px 0;}
+
+  .section{
+    margin-bottom:14px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .section-head{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .dash{
+    width:4px; height:22px; border-radius:2px; flex-shrink:0;
+  }
+  .section-head .titles{flex:1; min-width:0;}
+  .section-head h2{
+    margin:0; font-size:15px; font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .section-head .meta{
+    font-size:11px; color:var(--ink-soft); margin-top:1px;
+  }
+  .chev{
+    font-size:11px; color:var(--ink-soft);
+    transition:transform .15s ease;
+    flex-shrink:0;
+  }
+  .section.collapsed .chev{transform:rotate(-90deg);}
+
+  .progress-track{
+    height:3px; background:var(--line);
+  }
+  .progress-fill{
+    height:100%; background:var(--accent);
+    transition:width .2s ease;
+  }
+
+  .section-body{
+    border-top:1px solid var(--line);
+  }
+  .section.collapsed .section-body{display:none;}
+
+  .task{
+    border-bottom:1px solid var(--line);
+    padding:11px 14px;
+  }
+  .task:last-child{border-bottom:none;}
+  .task-row{
+    display:flex; align-items:flex-start; gap:10px;
+  }
+  .checkbox{
+    width:18px; height:18px; border-radius:3px;
+    border:1.5px solid var(--ink-soft);
+    flex-shrink:0; margin-top:1px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; background:var(--paper-raised);
+  }
+  .checkbox.done{background:var(--sage); border-color:var(--sage);}
+  .checkbox.done::after{content:"✓"; color:var(--paper-raised); font-size:12px; line-height:1;}
+
+  .task-main{flex:1; min-width:0;}
+  .task-title{
+    font-size:14.5px; font-weight:500; line-height:1.35;
+    cursor:pointer;
+  }
+  .task.done .task-title{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line);}
+
+  .task-meta{
+    display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;
+  }
+  .deadline{
+    font-size:11px; padding:1px 6px; border-radius:2px;
+    background:var(--accent-soft); color:var(--accent);
+  }
+  .deadline.overdue{background:var(--rust-soft); color:var(--rust); font-weight:600;}
+  .deadline.soon{background:#F0E6C8; color:#8A6D1D;}
+  .priority-high{color:var(--rust); font-size:11px; font-weight:600;}
+  .priority-med{color:#8A6D1D; font-size:11px;}
+
+  .task-actions{
+    display:flex; gap:6px; flex-shrink:0;
+  }
+  .icon-btn{
+    background:none; border:none; color:var(--ink-soft);
+    font-size:15px; cursor:pointer; padding:2px 4px; line-height:1;
+  }
+  .icon-btn:active{color:var(--ink);}
+
+  .subtasks{margin:8px 0 0 28px;}
+  .subtask{
+    display:flex; align-items:center; gap:8px; padding:3px 0;
+  }
+  .subtask .checkbox{width:15px; height:15px;}
+  .subtask .checkbox.done::after{font-size:10px;}
+  .subtask-title{font-size:13px; flex:1;}
+  .subtask.done .subtask-title{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line);}
+  .subtask .icon-btn{font-size:13px;}
+
+  .add-subtask{
+    display:flex; gap:6px; margin:8px 0 0 28px;
+  }
+  .add-subtask input{
+    flex:1; font-family:inherit; font-size:12.5px;
+    border:1px solid var(--line); border-radius:3px; padding:5px 8px;
+    background:var(--paper);
+  }
+  .add-subtask button{
+    font-size:12px; border:1px solid var(--line); background:none;
+    border-radius:3px; padding:5px 9px; color:var(--ink-soft); cursor:pointer;
+  }
+
+  .add-task-row{padding:10px 14px;}
+  .add-task-row button{
+    width:100%; text-align:left; font-family:inherit;
+    background:none; border:1px dashed var(--line); color:var(--ink-soft);
+    padding:9px 10px; border-radius:3px; font-size:13px; cursor:pointer;
+  }
+
+  .add-section-row{
+    padding:10px 4px 20px;
+  }
+  .add-section-row button{
+    width:100%; font-family:inherit; font-weight:500;
+    background:none; border:1px dashed var(--line); color:var(--ink-soft);
+    padding:12px; border-radius:4px; font-size:13.5px; cursor:pointer;
+  }
+
+  .empty{
+    text-align:center; padding:60px 20px; color:var(--ink-soft);
+  }
+  .empty .big{font-size:15px; font-weight:600; color:var(--ink); margin-bottom:4px;}
+  .empty .small{font-size:12.5px;}
+
+  /* modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(35,35,32,0.45);
+    display:none; align-items:flex-end; justify-content:center; z-index:20;
+  }
+  .overlay.open{display:flex;}
+  .sheet{
+    background:var(--paper); width:100%; max-width:480px;
+    border-radius:12px 12px 0 0;
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+    max-height:85vh; overflow-y:auto;
+  }
+  .sheet h3{margin:0 0 14px; font-size:16px;}
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block; font-size:11.5px; font-weight:600; color:var(--ink-soft);
+    margin-bottom:5px; text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .field input[type=text], .field input[type=date], .field textarea, .field select{
+    width:100%; font-family:inherit; font-size:14.5px;
+    border:1px solid var(--line); border-radius:4px; padding:9px 10px;
+    background:var(--paper-raised); color:var(--ink);
+  }
+  .field textarea{resize:vertical; min-height:60px;}
+  .swatches{display:flex; gap:8px;}
+  .swatch{
+    width:26px; height:26px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent;
+  }
+  .swatch.selected{border-color:var(--ink);}
+  .prio-options{display:flex; gap:8px;}
+  .prio-options button{
+    flex:1; font-family:inherit; font-size:12.5px; padding:8px;
+    border:1px solid var(--line); background:var(--paper-raised);
+    border-radius:4px; color:var(--ink-soft); cursor:pointer;
+  }
+  .prio-options button.selected{border-color:var(--accent); color:var(--accent); background:var(--accent-soft); font-weight:600;}
+  .sheet-actions{display:flex; gap:10px; margin-top:16px;}
+  .sheet-actions button{
+    flex:1; font-family:inherit; font-size:14px; font-weight:600;
+    padding:11px; border-radius:5px; border:none; cursor:pointer;
+  }
+  .btn-primary{background:var(--accent); color:var(--paper);}
+  .btn-secondary{background:none; border:1px solid var(--line) !important; color:var(--ink-soft);}
+  .btn-danger{background:none; color:var(--rust); font-size:12.5px !important; font-weight:500 !important; padding:6px !important;}
+
+  .fab{
+    position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom));
+    width:52px; height:52px; border-radius:50%;
+    background:var(--accent); color:var(--paper);
+    border:none; font-size:26px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 10px rgba(44,74,124,0.35);
+    cursor:pointer; z-index:8;
+  }
+
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ledger</h1>
+  <div class="sub"><span class="count" id="statCount">0</span> open tasks · <span id="statOverdue">0</span> overdue</div>
+</header>
+
+<div class="toolbar">
+  <button id="exportBtn">Export backup</button>
+  <button id="importBtn">Import backup</button>
+  <input type="file" id="importFile" accept="application/json">
+</div>
+
+<main id="sections"></main>
+
+<button class="fab" id="fabAdd" title="New module/goal">+</button>
+
+<!-- Section modal -->
+<div class="overlay" id="sectionOverlay">
+  <div class="sheet">
+    <h3 id="sectionModalTitle">New module / goal</h3>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="sectionName" placeholder="e.g. CS402 — Databases, or Fitness goals">
+    </div>
+    <div class="field">
+      <label>Color tag</label>
+      <div class="swatches" id="sectionSwatches"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="sectionCancel">Cancel</button>
+      <button class="btn-primary" id="sectionSave">Save</button>
+    </div>
+    <button class="btn-danger" id="sectionDelete" style="display:none; margin-top:12px;">Delete this module and all its tasks</button>
+  </div>
+</div>
+
+<!-- Task modal -->
+<div class="overlay" id="taskOverlay">
+  <div class="sheet">
+    <h3 id="taskModalTitle">New task</h3>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="taskTitle" placeholder="What needs doing?">
+    </div>
+    <div class="field">
+      <label>Deadline</label>
+      <input type="date" id="taskDeadline">
+    </div>
+    <div class="field">
+      <label>Priority</label>
+      <div class="prio-options" id="taskPriority">
+        <button data-p="low">Low</button>
+        <button data-p="med">Medium</button>
+        <button data-p="high">High</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="taskNotes" placeholder="Optional details..."></textarea>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-secondary" id="taskCancel">Cancel</button>
+      <button class="btn-primary" id="taskSave">Save</button>
+    </div>
+    <button class="btn-danger" id="taskDelete" style="display:none; margin-top:12px;">Delete task</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'ledger_data_v1';
+const SWATCH_COLORS = ['#2C4A7C','#B5542D','#5C7A5A','#8A6D1D','#6B4E8E','#4E8E8A'];
+
+let state = load();
+let editingSectionId = null;
+let editingTask = null; // {sectionId, taskId or null}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { sections: [] };
+}
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  render();
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - today) / 86400000);
+}
+function formatDeadline(dateStr){
+  const n = daysUntil(dateStr);
+  if(n === null) return '';
+  if(n < 0) return `${Math.abs(n)}d overdue`;
+  if(n === 0) return 'Due today';
+  if(n === 1) return 'Due tomorrow';
+  if(n <= 7) return `Due in ${n}d`;
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+}
+function deadlineClass(dateStr){
+  const n = daysUntil(dateStr);
+  if(n === null) return '';
+  if(n < 0) return 'overdue';
+  if(n <= 3) return 'soon';
+  return '';
+}
+
+function render(){
+  const container = document.getElementById('sections');
+  container.innerHTML = '';
+
+  let openCount = 0, overdueCount = 0;
+  state.sections.forEach(sec => {
+    sec.tasks.forEach(t => {
+      if(!t.done){
+        openCount++;
+        if(daysUntil(t.deadline) !== null && daysUntil(t.deadline) < 0) overdueCount++;
+      }
+    });
+  });
+  document.getElementById('statCount').textContent = openCount;
+  document.getElementById('statOverdue').textContent = overdueCount;
+
+  if(state.sections.length === 0){
+    container.innerHTML = `<div class="empty"><div class="big">No modules yet</div><div class="small">Tap + to add your first module or goal.</div></div>`;
+    return;
+  }
+
+  state.sections.forEach(sec => {
+    const total = sec.tasks.length;
+    const done = sec.tasks.filter(t=>t.done).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+
+    const secEl = document.createElement('div');
+    secEl.className = 'section' + (sec.collapsed ? ' collapsed' : '');
+
+    secEl.innerHTML = `
+      <div class="section-head" data-sec="${sec.id}">
+        <div class="dash" style="background:${sec.color}"></div>
+        <div class="titles">
+          <h2>${escapeHtml(sec.name)}</h2>
+          <div class="meta">${done}/${total} done${total?` · ${pct}%`:''}</div>
+        </div>
+        <button class="icon-btn edit-sec" data-sec="${sec.id}">✎</button>
+        <div class="chev">▾</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${sec.color}"></div></div>
+      <div class="section-body">
+        ${sec.tasks
+          .slice()
+          .sort((a,b)=>{
+            if(a.done !== b.done) return a.done ? 1 : -1;
+            const da = a.deadline ? new Date(a.deadline) : new Date('9999-12-31');
+            const db = b.deadline ? new Date(b.deadline) : new Date('9999-12-31');
+            return da - db;
+          })
+          .map(t => taskHtml(sec, t)).join('')}
+        <div class="add-task-row">
+          <button class="add-task-btn" data-sec="${sec.id}">+ Add task</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(secEl);
+  });
+
+  attachHandlers();
+}
+
+function taskHtml(sec, t){
+  const subDone = t.subtasks.filter(s=>s.done).length;
+  const dClass = deadlineClass(t.deadline);
+  return `
+    <div class="task ${t.done ? 'done' : ''}" data-task="${t.id}" data-sec="${sec.id}">
+      <div class="task-row">
+        <div class="checkbox ${t.done ? 'done' : ''}" data-toggle-task="${t.id}" data-sec="${sec.id}"></div>
+        <div class="task-main">
+          <div class="task-title" data-edit-task="${t.id}" data-sec="${sec.id}">${escapeHtml(t.title)}</div>
+          <div class="task-meta">
+            ${t.deadline ? `<span class="deadline ${dClass} mono">${formatDeadline(t.deadline)}</span>` : ''}
+            ${t.priority === 'high' ? '<span class="priority-high">High priority</span>' : ''}
+            ${t.priority === 'med' ? '<span class="priority-med">Medium</span>' : ''}
+            ${t.subtasks.length ? `<span class="mono" style="font-size:11px;color:var(--ink-soft)">${subDone}/${t.subtasks.length} subtasks</span>` : ''}
+          </div>
+          <div class="subtasks">
+            ${t.subtasks.map(s => `
+              <div class="subtask ${s.done?'done':''}">
+                <div class="checkbox ${s.done?'done':''}" data-toggle-sub="${s.id}" data-task="${t.id}" data-sec="${sec.id}"></div>
+                <div class="subtask-title">${escapeHtml(s.title)}</div>
+                <button class="icon-btn" data-del-sub="${s.id}" data-task="${t.id}" data-sec="${sec.id}">×</button>
+              </div>
+            `).join('')}
+          </div>
+          <div class="add-subtask">
+            <input type="text" placeholder="Add subtask..." data-subinput="${t.id}">
+            <button data-addsub="${t.id}" data-sec="${sec.id}">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function attachHandlers(){
+  document.querySelectorAll('.section-head').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('.edit-sec')) return;
+      const id = el.dataset.sec;
+      const sec = state.sections.find(s=>s.id===id);
+      sec.collapsed = !sec.collapsed;
+      save();
+    });
+  });
+  document.querySelectorAll('.edit-sec').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openSectionModal(el.dataset.sec);
+    });
+  });
+  document.querySelectorAll('[data-toggle-task]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const sec = state.sections.find(s=>s.id===el.dataset.sec);
+      const t = sec.tasks.find(t=>t.id===el.dataset.toggleTask);
+      t.done = !t.done;
+      save();
+    });
+  });
+  document.querySelectorAll('[data-edit-task]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      openTaskModal(el.dataset.sec, el.dataset.editTask);
+    });
+  });
+  document.querySelectorAll('[data-toggle-sub]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const sec = state.sections.find(s=>s.id===el.dataset.sec);
+      const t = sec.tasks.find(t=>t.id===el.dataset.task);
+      const s = t.subtasks.find(s=>s.id===el.dataset.toggleSub);
+      s.done = !s.done;
+      save();
+    });
+  });
+  document.querySelectorAll('[data-del-sub]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const sec = state.sections.find(s=>s.id===el.dataset.sec);
+      const t = sec.tasks.find(t=>t.id===el.dataset.task);
+      t.subtasks = t.subtasks.filter(s=>s.id!==el.dataset.delSub);
+      save();
+    });
+  });
+  document.querySelectorAll('[data-addsub]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const input = document.querySelector(`[data-subinput="${el.dataset.addsub}"]`);
+      const title = input.value.trim();
+      if(!title) return;
+      const sec = state.sections.find(s=>s.id===el.dataset.sec);
+      const t = sec.tasks.find(t=>t.id===el.dataset.addsub);
+      t.subtasks.push({id: uid(), title, done:false});
+      save();
+    });
+  });
+  document.querySelectorAll('[data-subinput]').forEach(el=>{
+    el.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        document.querySelector(`[data-addsub="${el.dataset.subinput}"]`).click();
+      }
+    });
+  });
+  document.querySelectorAll('.add-task-btn').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      openTaskModal(el.dataset.sec, null);
+    });
+  });
+}
+
+// ---- Section modal ----
+function openSectionModal(id){
+  editingSectionId = id;
+  const overlay = document.getElementById('sectionOverlay');
+  const nameInput = document.getElementById('sectionName');
+  const swatches = document.getElementById('sectionSwatches');
+  const deleteBtn = document.getElementById('sectionDelete');
+  swatches.innerHTML = SWATCH_COLORS.map(c=>`<div class="swatch" data-color="${c}" style="background:${c}"></div>`).join('');
+
+  let selectedColor = SWATCH_COLORS[0];
+  if(id){
+    const sec = state.sections.find(s=>s.id===id);
+    nameInput.value = sec.name;
+    selectedColor = sec.color;
+    deleteBtn.style.display = 'block';
+    document.getElementById('sectionModalTitle').textContent = 'Edit module / goal';
+  }else{
+    nameInput.value = '';
+    deleteBtn.style.display = 'none';
+    document.getElementById('sectionModalTitle').textContent = 'New module / goal';
+  }
+  updateSwatchSelection(swatches, selectedColor);
+  swatches.querySelectorAll('.swatch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      selectedColor = sw.dataset.color;
+      updateSwatchSelection(swatches, selectedColor);
+    });
+  });
+  document.getElementById('sectionSave').onclick = ()=>{
+    const name = nameInput.value.trim();
+    if(!name) return;
+    if(editingSectionId){
+      const sec = state.sections.find(s=>s.id===editingSectionId);
+      sec.name = name; sec.color = selectedColor;
+    }else{
+      state.sections.push({id: uid(), name, color: selectedColor, collapsed:false, tasks:[]});
+    }
+    closeSectionModal();
+    save();
+  };
+  deleteBtn.onclick = ()=>{
+    if(!confirm('Delete this module and all its tasks?')) return;
+    state.sections = state.sections.filter(s=>s.id!==editingSectionId);
+    closeSectionModal();
+    save();
+  };
+  overlay.classList.add('open');
+}
+function updateSwatchSelection(container, color){
+  container.querySelectorAll('.swatch').forEach(sw=>{
+    sw.classList.toggle('selected', sw.dataset.color === color);
+  });
+}
+function closeSectionModal(){
+  document.getElementById('sectionOverlay').classList.remove('open');
+  editingSectionId = null;
+}
+document.getElementById('sectionCancel').addEventListener('click', closeSectionModal);
+document.getElementById('fabAdd').addEventListener('click', ()=>openSectionModal(null));
+
+// ---- Task modal ----
+function openTaskModal(secId, taskId){
+  editingTask = {sectionId: secId, taskId};
+  const overlay = document.getElementById('taskOverlay');
+  const titleInput = document.getElementById('taskTitle');
+  const deadlineInput = document.getElementById('taskDeadline');
+  const notesInput = document.getElementById('taskNotes');
+  const deleteBtn = document.getElementById('taskDelete');
+  const prioButtons = document.querySelectorAll('#taskPriority button');
+
+  let selectedPriority = 'med';
+  if(taskId){
+    const sec = state.sections.find(s=>s.id===secId);
+    const t = sec.tasks.find(t=>t.id===taskId);
+    titleInput.value = t.title;
+    deadlineInput.value = t.deadline || '';
+    notesInput.value = t.notes || '';
+    selectedPriority = t.priority || 'med';
+    deleteBtn.style.display = 'block';
+    document.getElementById('taskModalTitle').textContent = 'Edit task';
+  }else{
+    titleInput.value = '';
+    deadlineInput.value = '';
+    notesInput.value = '';
+    deleteBtn.style.display = 'none';
+    document.getElementById('taskModalTitle').textContent = 'New task';
+  }
+  prioButtons.forEach(b=>b.classList.toggle('selected', b.dataset.p === selectedPriority));
+  prioButtons.forEach(b=>{
+    b.onclick = ()=>{
+      selectedPriority = b.dataset.p;
+      prioButtons.forEach(x=>x.classList.toggle('selected', x===b));
+    };
+  });
+
+  document.getElementById('taskSave').onclick = ()=>{
+    const title = titleInput.value.trim();
+    if(!title) return;
+    const sec = state.sections.find(s=>s.id===secId);
+    if(taskId){
+      const t = sec.tasks.find(t=>t.id===taskId);
+      t.title = title; t.deadline = deadlineInput.value || null;
+      t.notes = notesInput.value; t.priority = selectedPriority;
+    }else{
+      sec.tasks.push({
+        id: uid(), title, deadline: deadlineInput.value || null,
+        notes: notesInput.value, priority: selectedPriority,
+        done:false, subtasks:[]
+      });
+    }
+    closeTaskModal();
+    save();
+  };
+  deleteBtn.onclick = ()=>{
+    if(!confirm('Delete this task?')) return;
+    const sec = state.sections.find(s=>s.id===secId);
+    sec.tasks = sec.tasks.filter(t=>t.id!==taskId);
+    closeTaskModal();
+    save();
+  };
+  overlay.classList.add('open');
+}
+function closeTaskModal(){
+  document.getElementById('taskOverlay').classList.remove('open');
+  editingTask = null;
+}
+document.getElementById('taskCancel').addEventListener('click', closeTaskModal);
+
+// ---- Export / Import ----
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `ledger-backup-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(reader.result);
+      if(!parsed.sections) throw new Error('bad format');
+      if(state.sections.length && !confirm('This will replace your current data with the imported backup. Continue?')) return;
+      state = parsed;
+      save();
+    }catch(err){
+      alert('Could not read that file — is it a Ledger backup JSON?');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// close modals on backdrop click
+document.getElementById('sectionOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'sectionOverlay') closeSectionModal();
+});
+document.getElementById('taskOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'taskOverlay') closeTaskModal();
+});
+
+// register service worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+
+render();
+</script>
+</body>
+</html>
