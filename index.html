@@ -195,6 +195,13 @@
   }
   .task.done .task-title{color:var(--ink-soft); font-weight:500; text-decoration:line-through; text-decoration-color:var(--line-strong);}
 
+  .task-notes{
+    font-size:12.5px; color:var(--ink-soft); line-height:1.4;
+    margin-top:3px; cursor:pointer;
+    overflow-wrap:break-word; word-break:break-word;
+  }
+  .task.done .task-notes{opacity:0.6;}
+
   .task-meta{
     display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;
   }
@@ -278,13 +285,14 @@
   .overlay{
     position:fixed; inset:0; background:rgba(3,20,19,0.62);
     display:none; align-items:flex-end; justify-content:center; z-index:20;
+    overflow-x:hidden; width:100vw;
   }
   .overlay.open{display:flex;}
   .sheet{
-    background:var(--paper); width:100%; max-width:480px;
+    background:var(--paper); width:100%; max-width:480px; min-width:0;
     border-radius:26px 26px 0 0;
     padding:22px 20px calc(22px + env(safe-area-inset-bottom));
-    max-height:85vh; overflow-y:auto;
+    max-height:85vh; overflow-y:auto; overflow-x:hidden;
     box-shadow:var(--shadow-lg);
   }
   .sheet h3{
@@ -582,6 +590,7 @@ function taskHtml(sec, t){
         <div class="checkbox ${t.done ? 'done' : ''}" data-toggle-task="${t.id}" data-sec="${sec.id}"></div>
         <div class="task-main">
           <div class="task-title" data-edit-task="${t.id}" data-sec="${sec.id}">${escapeHtml(t.title)}</div>
+          ${t.notes && t.notes.trim() ? `<div class="task-notes" data-edit-task="${t.id}" data-sec="${sec.id}">${escapeHtml(t.notes)}</div>` : ''}
           <div class="task-meta">
             ${t.deadline ? `<span class="deadline ${dClass} mono">${formatDeadline(t.deadline)}</span>` : ''}
             ${t.priority === 'high' ? '<span class="priority-high">High priority</span>' : ''}
