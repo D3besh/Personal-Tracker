@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#EDEAE2">
-<title>Ledger — Task Tracker</title>
+<meta name="theme-color" content="#1E1626">
+<title>Tracker — Task Tracker</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
@@ -12,25 +12,28 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   :root{
-    --paper:#EDEAE2;
-    --paper-raised:#F6F4EE;
-    --ink:#232320;
-    --ink-soft:#6B6A63;
-    --line:#D9D5C9;
-    --accent:#2C4A7C;
-    --accent-soft:#DCE3ED;
-    --rust:#B5542D;
-    --rust-soft:#F3E1D8;
-    --sage:#5C7A5A;
+    --paper:#1E1626;
+    --paper-raised:#2A1F33;
+    --ink:#F5E6D8;
+    --ink-soft:#B39FB0;
+    --line:#3D2E45;
+    --accent:#FF7A45;
+    --accent-soft:#4A2A22;
+    --rust:#FF4D6D;
+    --rust-soft:#451A26;
+    --sage:#6FA8A0;
+    --gold:#FFC15E;
+    --gold-soft:#4A3418;
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; background:var(--paper); color:var(--ink);}
+  html,body{margin:0; padding:0; background:var(--paper); color:var(--ink); overflow-x:hidden; max-width:100vw;}
   body{
     font-family:'IBM Plex Sans', system-ui, sans-serif;
     -webkit-font-smoothing:antialiased;
     padding-bottom:96px;
     min-height:100vh;
+    width:100%;
   }
   .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
 
@@ -48,6 +51,25 @@
     font-size:12.5px; color:var(--ink-soft);
   }
   header .sub .count{color:var(--accent); font-weight:600;}
+
+  .tabbar{
+    display:flex; gap:6px; margin-top:12px;
+    overflow-x:auto; overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    padding-bottom:2px;
+  }
+  .tabbar::-webkit-scrollbar{display:none;}
+  .tab{
+    flex-shrink:0;
+    display:flex; align-items:center; gap:6px;
+    font-family:inherit; font-size:12.5px; font-weight:500;
+    background:var(--paper-raised); border:1px solid var(--line); color:var(--ink-soft);
+    padding:7px 12px; border-radius:16px; cursor:pointer;
+    white-space:nowrap;
+  }
+  .tab .tab-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .tab.active{border-color:var(--accent); color:var(--accent); background:var(--accent-soft); font-weight:600;}
 
   .toolbar{
     display:flex; gap:8px; padding:10px 18px 0;
@@ -126,7 +148,7 @@
   .task-main{flex:1; min-width:0;}
   .task-title{
     font-size:14.5px; font-weight:500; line-height:1.35;
-    cursor:pointer;
+    cursor:pointer; overflow-wrap:break-word; word-break:break-word;
   }
   .task.done .task-title{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line);}
 
@@ -138,9 +160,9 @@
     background:var(--accent-soft); color:var(--accent);
   }
   .deadline.overdue{background:var(--rust-soft); color:var(--rust); font-weight:600;}
-  .deadline.soon{background:#F0E6C8; color:#8A6D1D;}
+  .deadline.soon{background:var(--gold-soft); color:var(--gold);}
   .priority-high{color:var(--rust); font-size:11px; font-weight:600;}
-  .priority-med{color:#8A6D1D; font-size:11px;}
+  .priority-med{color:var(--gold); font-size:11px;}
 
   .task-actions{
     display:flex; gap:6px; flex-shrink:0;
@@ -157,7 +179,7 @@
   }
   .subtask .checkbox{width:15px; height:15px;}
   .subtask .checkbox.done::after{font-size:10px;}
-  .subtask-title{font-size:13px; flex:1;}
+  .subtask-title{font-size:13px; flex:1; overflow-wrap:break-word; word-break:break-word; min-width:0;}
   .subtask.done .subtask-title{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line);}
   .subtask .icon-btn{font-size:13px;}
 
@@ -165,7 +187,7 @@
     display:flex; gap:6px; margin:8px 0 0 28px;
   }
   .add-subtask input{
-    flex:1; font-family:inherit; font-size:12.5px;
+    flex:1; font-family:inherit; font-size:16px;
     border:1px solid var(--line); border-radius:3px; padding:5px 8px;
     background:var(--paper);
   }
@@ -215,7 +237,7 @@
     margin-bottom:5px; text-transform:uppercase; letter-spacing:0.03em;
   }
   .field input[type=text], .field input[type=date], .field textarea, .field select{
-    width:100%; font-family:inherit; font-size:14.5px;
+    width:100%; font-family:inherit; font-size:16px;
     border:1px solid var(--line); border-radius:4px; padding:9px 10px;
     background:var(--paper-raised); color:var(--ink);
   }
@@ -248,7 +270,7 @@
     background:var(--accent); color:var(--paper);
     border:none; font-size:26px; line-height:1;
     display:flex; align-items:center; justify-content:center;
-    box-shadow:0 3px 10px rgba(44,74,124,0.35);
+    box-shadow:0 3px 14px rgba(255,122,69,0.4);
     cursor:pointer; z-index:8;
   }
 
@@ -258,8 +280,9 @@
 <body>
 
 <header>
-  <h1>Ledger</h1>
+  <h1>Tracker</h1>
   <div class="sub"><span class="count" id="statCount">0</span> open tasks · <span id="statOverdue">0</span> overdue</div>
+  <nav class="tabbar" id="tabBar"></nav>
 </header>
 
 <div class="toolbar">
@@ -326,7 +349,7 @@
 
 <script>
 const STORAGE_KEY = 'ledger_data_v1';
-const SWATCH_COLORS = ['#2C4A7C','#B5542D','#5C7A5A','#8A6D1D','#6B4E8E','#4E8E8A'];
+const SWATCH_COLORS = ['#FF7A45','#FF4D6D','#8E5AA0','#FFC15E','#6FA8A0','#C2447D'];
 
 let state = load();
 let editingSectionId = null;
@@ -335,9 +358,13 @@ let editingTask = null; // {sectionId, taskId or null}
 function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      parsed.activeTab = 'soon'; // app always opens on the Due Soon view
+      return parsed;
+    }
   }catch(e){}
-  return { sections: [] };
+  return { sections: [], activeTab: 'soon' };
 }
 function save(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -369,12 +396,48 @@ function deadlineClass(dateStr){
   return '';
 }
 
+function renderTabs(){
+  const bar = document.getElementById('tabBar');
+  if(state.sections.length === 0){
+    bar.innerHTML = '';
+    return;
+  }
+  const tabs = [{id:'soon', name:'Due Soon', color:null}, {id:'all', name:'All', color:null}, ...state.sections];
+  bar.innerHTML = tabs.map(t => `
+    <button class="tab ${state.activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">
+      ${t.color ? `<span class="tab-dot" style="background:${t.color}"></span>` : ''}
+      ${escapeHtml(t.name)}
+    </button>
+  `).join('');
+  bar.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeTab = btn.dataset.tab;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+    });
+  });
+}
+
 function render(){
+  if(!['all','soon'].includes(state.activeTab) && !state.sections.some(s => s.id === state.activeTab)){
+    state.activeTab = 'soon';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+  renderTabs();
+
   const container = document.getElementById('sections');
   container.innerHTML = '';
 
+  const visibleSections = state.activeTab === 'soon'
+    ? state.sections
+        .map(sec => ({...sec, tasks: sec.tasks.filter(t => !t.done && t.deadline && daysUntil(t.deadline) <= 3)}))
+        .filter(sec => sec.tasks.length > 0)
+    : (state.activeTab === 'all'
+        ? state.sections
+        : state.sections.filter(s => s.id === state.activeTab));
+
   let openCount = 0, overdueCount = 0;
-  state.sections.forEach(sec => {
+  visibleSections.forEach(sec => {
     sec.tasks.forEach(t => {
       if(!t.done){
         openCount++;
@@ -389,8 +452,15 @@ function render(){
     container.innerHTML = `<div class="empty"><div class="big">No modules yet</div><div class="small">Tap + to add your first module or goal.</div></div>`;
     return;
   }
+  if(visibleSections.length === 0){
+    const msg = state.activeTab === 'soon'
+      ? `<div class="empty"><div class="big">Nothing due soon</div><div class="small">You're clear for the next 3 days. Check the "All" tab to see everything else.</div></div>`
+      : `<div class="empty"><div class="big">Nothing here</div><div class="small">This module has no tasks yet.</div></div>`;
+    container.innerHTML = msg;
+    return;
+  }
 
-  state.sections.forEach(sec => {
+  visibleSections.forEach(sec => {
     const total = sec.tasks.length;
     const done = sec.tasks.filter(t=>t.done).length;
     const pct = total ? Math.round((done/total)*100) : 0;
@@ -677,7 +747,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = `ledger-backup-${stamp}.json`;
+  a.download = `tracker-backup-${stamp}.json`;
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -696,7 +766,7 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
       state = parsed;
       save();
     }catch(err){
-      alert('Could not read that file — is it a Ledger backup JSON?');
+      alert('Could not read that file — is it a Tracker backup JSON?');
     }
   };
   reader.readAsText(file);
