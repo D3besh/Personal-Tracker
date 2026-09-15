@@ -309,6 +309,10 @@
     border:1px solid var(--line-strong); border-radius:var(--r-md); padding:11px 14px;
     background:var(--paper-raised); color:var(--ink);
   }
+  .field input[type=date]{
+    -webkit-appearance:none; appearance:none;
+    display:block; box-sizing:border-box; max-width:100%; min-width:0;
+  }
   .field input[type=text]::placeholder, .field textarea::placeholder{color:var(--ink-soft);}
   .field textarea{resize:vertical; min-height:70px;}
   .swatches{display:flex; gap:10px; flex-wrap:wrap;}
