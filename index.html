@@ -313,19 +313,19 @@
     -webkit-appearance:none; appearance:none;
     display:block; box-sizing:border-box; max-width:100%; min-width:0;
   }
+  .date-field-wrap{position:relative; display:inline-block; max-width:100%;}
   .date-btn{
     display:inline-flex; align-items:center; gap:8px;
     font-family:inherit; font-size:14px; font-weight:600;
     padding:10px 16px; width:auto; max-width:100%;
     border:1px solid var(--line-strong); border-radius:999px;
     background:var(--paper-raised); color:var(--ink-soft);
-    cursor:pointer;
   }
   .date-btn.has-date{border-color:var(--accent); color:var(--ink);}
-  .date-btn:hover{border-color:var(--accent);}
-  .visually-hidden-date{
-    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  .date-field-overlay{
+    position:absolute; inset:0; width:100%; height:100%;
+    margin:0; padding:0; border:0; opacity:0;
+    -webkit-appearance:none; appearance:none; cursor:pointer;
   }
   .field input[type=text]::placeholder, .field textarea::placeholder{color:var(--ink-soft);}
   .field textarea{resize:vertical; min-height:70px;}
@@ -423,9 +423,11 @@
       <input type="text" id="taskTitle" placeholder="What needs doing?">
     </div>
     <div class="field">
-      <label>Deadline</label>
-      <button type="button" class="date-btn" id="taskDeadlineBtn">No deadline set</button>
-      <input type="date" id="taskDeadline" class="visually-hidden-date">
+      <label for="taskDeadline">Deadline</label>
+      <div class="date-field-wrap">
+        <div class="date-btn" id="taskDeadlineBtn" aria-hidden="true">No deadline set</div>
+        <input type="date" id="taskDeadline" class="date-field-overlay">
+      </div>
     </div>
     <div class="field">
       <label>Priority</label>
@@ -813,13 +815,6 @@ function openTaskModal(secId, taskId){
     document.getElementById('taskModalTitle').textContent = 'New task';
   }
   refreshDeadlineBtn();
-  deadlineBtn.onclick = () => {
-    if(deadlineInput.showPicker){
-      try{ deadlineInput.showPicker(); return; }catch(e){}
-    }
-    deadlineInput.focus();
-    deadlineInput.click();
-  };
   deadlineInput.onchange = refreshDeadlineBtn;
 
   prioButtons.forEach(b=>b.classList.toggle('selected', b.dataset.p === selectedPriority));
